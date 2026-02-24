@@ -4,28 +4,44 @@ set -e
 
 CHROOT_DIR="/data/local/debian"
 USERNAME="dante"
+ROOTFS_URL="https://github.com/debuerreotype/docker-debian-artifacts/raw/dist-arm64v8/trixie/rootfs.tar.xz"
 
-echo "[+] Installing Termux deps..."
+echo "[+] Installing dependencies..."
 pkg update -y
 pkg install -y root-repo x11-repo
-pkg install -y sudo wget xz-utils pulseaudio termux-x11-nightly dbus
+pkg install -y tsu sudo wget xz-utils pulseaudio termux-x11-nightly dbus
 
-if ! command -v debootstrap >/dev/null 2>&1; then
-    pkg install -y debootstrap
-fi
-
-echo "[+] Creating rootfs..."
+echo "[+] Creating directory..."
 sudo mkdir -p $CHROOT_DIR
 
-echo "[+] Bootstrapping Debian 13 (trixie)..."
-sudo debootstrap --arch=arm64 --variant=minbase trixie /data/local/debian http://deb.debian.org/debian
+echo "[+] Downloading Debian 13 rootfs..."
+wget -O rootfs.tar.xz $ROOTFS_URL
 
-echo "[+] Configuring base system..."
+echo "[+] Extracting rootfs..."
+sudo tar -xpf rootfs.tar.xz -C $CHROOT_DIR
+
+echo "[+] Setting DNS..."
+sudo cp /etc/resolv.conf $CHROOT_DIR/etc/resolv.conf
+
+echo "[+] Mounting base filesystems..."
+
+sudo mount --bind /dev $CHROOT_DIR/dev || true
+sudo mount --bind /dev/pts $CHROOT_DIR/dev/pts || true
+sudo mount -t proc proc $CHROOT_DIR/proc || true
+sudo mount -t sysfs sys $CHROOT_DIR/sys || true
+sudo mount -t tmpfs tmpfs $CHROOT_DIR/run || true
+
+echo "[+] Installing base packages inside chroot..."
 
 sudo chroot $CHROOT_DIR /bin/bash -c "
 apt update
-apt install -y xfce4 xfce4-goodies dbus-x11 runit openssh-server sudo \
-gvfs gvfs-daemons gvfs-backends policykit-1 xclip
+
+DEBIAN_FRONTEND=noninteractive apt install -y \
+xfce4 xfce4-goodies \
+runit \
+openssh-server sudo \
+dbus-x11 gvfs gvfs-daemons gvfs-backends \
+policykit-1 xclip
 
 echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen
 locale-gen
@@ -36,7 +52,7 @@ echo '$USERNAME ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 mkdir -p /var/run/sshd
 "
 
-echo "[+] Creating run script..."
+echo "[+] Creating launcher script..."
 
 cat << 'EOF' > ~/start-debian-desktop.sh
 #!/data/data/com.termux/files/usr/bin/bash
@@ -45,7 +61,7 @@ set -e
 
 CHROOT_DIR="/data/local/debian"
 USERNAME="dante"
-USE_UNSHARE=0   # change to 1 if kernel supports
+USE_UNSHARE=0
 
 echo "[+] Killing old sessions..."
 killall -9 termux-x11 Xwayland pulseaudio virgl_test_server_android 2>/dev/null || true
@@ -65,6 +81,7 @@ pulseaudio --start --exit-idle-time=-1
 pacmd load-module module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1
 
 echo "[+] Mounting filesystems..."
+
 sudo mount --bind /dev $CHROOT_DIR/dev || true
 sudo mount --bind /dev/pts $CHROOT_DIR/dev/pts || true
 sudo mount -t proc proc $CHROOT_DIR/proc || true
@@ -107,6 +124,7 @@ echo "~/start-debian-desktop.sh" > ~/.shortcuts/debian-desktop
 chmod +x ~/.shortcuts/debian-desktop
 
 echo ""
-echo "✅ Desktop environment installed!"
-echo "Run with:"
+echo "✅ INSTALL COMPLETE"
+echo ""
+echo "Run desktop with:"
 echo "   ~/start-debian-desktop.sh"
