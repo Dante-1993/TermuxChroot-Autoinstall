@@ -1,111 +1,112 @@
 #!/data/data/com.termux/files/usr/bin/bash
+
 set -e
 
-### CONFIG ###
-CHROOT=/data/local/linux
-USER=desktop
-ROOTFS_URL="https://cdimage.ubuntu.com/ubuntu-base/releases/24.04/release/ubuntu-base-24.04-base-arm64.tar.gz"
+CHROOT_DIR="/data/local/debian"
+USERNAME="dante"
 
-echo "[*] Updating Termux..."
+echo "[+] Installing Termux deps..."
 pkg update -y
-pkg upgrade -y
+pkg install -y root-repo x11-repo
+pkg install -y tsu sudo wget xz-utils pulseaudio termux-x11-nightly dbus
 
-echo "[*] Installing Termux packages..."
-pkg install -y \
-  x11-repo root-repo \
-  pulseaudio \
-  wget tar \
-  tsu \
-  xorg-xhost \
-  termux-x11-nightly
-
-echo "[*] Preparing chroot directory..."
-sudo mkdir -p $CHROOT
-
-if [ ! -f "$CHROOT/.golden-installed" ]; then
-  echo "[*] Downloading rootfs..."
-  wget -O /tmp/rootfs.tar.gz "$ROOTFS_URL"
-
-  echo "[*] Extracting rootfs..."
-  sudo tar -xpf /tmp/rootfs.tar.gz -C $CHROOT
-
-  sudo touch $CHROOT/.golden-installed
+if ! command -v debootstrap >/dev/null 2>&1; then
+    pkg install -y debootstrap
 fi
 
-echo "[*] Mounting system dirs..."
-sudo mount -o bind /dev  $CHROOT/dev  || true
-sudo mount -o bind /sys  $CHROOT/sys  || true
-sudo mount -o bind /proc $CHROOT/proc || true
+echo "[+] Creating rootfs..."
+sudo mkdir -p $CHROOT_DIR
 
-echo "[*] Installing packages inside chroot..."
-sudo chroot $CHROOT /bin/bash <<EOF
+echo "[+] Bootstrapping Debian 13 (trixie)..."
+sudo debootstrap --arch=arm64 trixie $CHROOT_DIR http://deb.debian.org/debian
+
+echo "[+] Configuring base system..."
+
+sudo chroot $CHROOT_DIR /bin/bash -c "
 apt update
-apt install -y \
-  supervisor \
-  dbus-x11 \
-  policykit-1 \
-  xfce4 \
-  xfce4-goodies \
-  xterm \
-  pulseaudio-utils
+apt install -y xfce4 xfce4-goodies dbus-x11 runit openssh-server sudo \
+gvfs gvfs-daemons gvfs-backends policykit-1 xclip
 
-id $USER >/dev/null 2>&1 || useradd -m -s /bin/bash $USER
-echo "$USER:$USER" | chpasswd
-EOF
+echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen
+locale-gen
 
-echo "[*] Configuring PulseAudio client..."
-sudo mkdir -p $CHROOT/etc/pulse
-cat <<EOF | sudo tee $CHROOT/etc/pulse/client.conf
-default-server = tcp:127.0.0.1
-autospawn = no
-EOF
+useradd -m -s /bin/bash $USERNAME
+echo '$USERNAME ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
-echo "[*] Installing desktop session script..."
-cat <<'EOF' | sudo tee $CHROOT/usr/local/bin/start-desktop.sh
-#!/bin/sh
-export XDG_RUNTIME_DIR=/tmp/runtime-$USER
-mkdir -p "$XDG_RUNTIME_DIR"
-chmod 700 "$XDG_RUNTIME_DIR"
+mkdir -p /var/run/sshd
+"
 
-export PULSE_SERVER=tcp:127.0.0.1
+echo "[+] Creating run script..."
 
-# user polkit
-if ! pgrep -u "$USER" polkitd >/dev/null; then
-  /usr/lib/policykit-1/polkitd &
-fi
+cat << 'EOF' > ~/start-debian-desktop.sh
+#!/data/data/com.termux/files/usr/bin/bash
 
-exec xfce4-session
-EOF
-sudo chmod +x $CHROOT/usr/local/bin/start-desktop.sh
+set -e
 
-echo "[*] Configuring supervisor..."
-sudo mkdir -p $CHROOT/etc/supervisor/conf.d
-cat <<EOF | sudo tee $CHROOT/etc/supervisor/conf.d/xsession.conf
-[program:xsession]
-user=$USER
-environment=DISPLAY=:0,HOME=/home/$USER
-command=/bin/sh -c "exec dbus-run-session /usr/local/bin/start-desktop.sh"
-autorestart=true
-EOF
+CHROOT_DIR="/data/local/debian"
+USERNAME="dante"
+USE_UNSHARE=0   # change to 1 if kernel supports
 
-echo "[*] Installing Termux launcher..."
-mkdir -p .shortcuts
-cat <<'EOF' > $HOME/.shortcuts/GUI
-#!/bin/sh
+echo "[+] Killing old sessions..."
+killall -9 termux-x11 Xwayland pulseaudio virgl_test_server_android 2>/dev/null || true
 
-pulseaudio --kill || true
-pulseaudio --start \
-  --exit-idle-time=-1 \
-  --load="module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1"
+echo "[+] Starting Termux X11..."
+am start --user 0 -n com.termux.x11/com.termux.x11.MainActivity
 
-termux-x11 :0 &
+sleep 2
+
+echo "[+] Starting X11 server..."
+XDG_RUNTIME_DIR=${TMPDIR} termux-x11 :0 -ac &
 
 sleep 3
 
-sudo chroot /data/local/linux /usr/bin/supervisord -n
+echo "[+] Starting PulseAudio..."
+pulseaudio --start --exit-idle-time=-1
+pacmd load-module module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1
+
+echo "[+] Mounting filesystems..."
+sudo mount --bind /dev $CHROOT_DIR/dev || true
+sudo mount --bind /dev/pts $CHROOT_DIR/dev/pts || true
+sudo mount -t proc proc $CHROOT_DIR/proc || true
+sudo mount -t sysfs sys $CHROOT_DIR/sys || true
+sudo mount -t tmpfs tmpfs $CHROOT_DIR/run || true
+sudo mount -t tmpfs tmpfs $CHROOT_DIR/tmp || true
+
+echo "[+] Mounting storage..."
+sudo mkdir -p $CHROOT_DIR/mnt/shared
+sudo mount --bind /sdcard $CHROOT_DIR/mnt/shared || true
+
+sudo cp /etc/resolv.conf $CHROOT_DIR/etc/resolv.conf || true
+
+echo "[+] Launching desktop..."
+
+if [ "$USE_UNSHARE" = "1" ]; then
+  sudo unshare --mount --uts --ipc --pid --fork --mount-proc \
+  chroot $CHROOT_DIR /bin/bash -c "
+  export DISPLAY=:0
+  export PULSE_SERVER=tcp:127.0.0.1
+  su - $USERNAME -c '
+  dbus-launch startxfce4
+  '
+  "
+else
+  sudo chroot $CHROOT_DIR /bin/bash -c "
+  export DISPLAY=:0
+  export PULSE_SERVER=tcp:127.0.0.1
+  su - $USERNAME -c '
+  dbus-launch startxfce4
+  '
+  "
+fi
 EOF
 
-chmod +x $PREFIX/bin/start-desktop
+chmod +x ~/start-debian-desktop.sh
 
-echo "[✓] INSTALLER v1.0 COMPLETE"
-echo "Run desktop with: start-desktop"
+mkdir -p ~/.shortcuts
+echo "~/start-debian-desktop.sh" > ~/.shortcuts/debian-desktop
+chmod +x ~/.shortcuts/debian-desktop
+
+echo ""
+echo "✅ Desktop environment installed!"
+echo "Run with:"
+echo "   ~/start-debian-desktop.sh"
