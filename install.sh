@@ -18,7 +18,7 @@ echo "[+] Creating rootfs..."
 sudo mkdir -p $CHROOT_DIR
 
 echo "[+] Bootstrapping Debian 13 (trixie)..."
-sudo debootstrap --arch=arm64 trixie $CHROOT_DIR http://deb.debian.org/debian
+sudo debootstrap --arch=arm64 --variant=minbase trixie /data/local/debian http://deb.debian.org/debian
 
 echo "[+] Configuring base system..."
 
