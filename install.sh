@@ -8,7 +8,7 @@ USERNAME="dante"
 echo "[+] Installing Termux deps..."
 pkg update -y
 pkg install -y root-repo x11-repo
-pkg install -y tsu sudo wget xz-utils pulseaudio termux-x11-nightly dbus
+pkg install -y sudo wget xz-utils pulseaudio termux-x11-nightly dbus
 
 if ! command -v debootstrap >/dev/null 2>&1; then
     pkg install -y debootstrap
