@@ -50,8 +50,9 @@ chmod +x setup.sh
 ./setup.sh
 ```
 
+---
 
-⚡ Optional GPU acceleration
+## ⚡ Optional GPU acceleration
 
 If virgl is installed:
 
@@ -60,15 +61,21 @@ Umcomment virgl_test_server_android & in start script
 Otherwise software rendering will be used.
 
 
-❤️ Contributing
+---
+
+## ❤️ Contributing
 
 Pull requests and improvements are welcome.
 
-📜 License
+---
+
+## 📜 License
 
 GPLv3 License
 
-⭐ Acknowledgements
+---
+
+## ⭐ Acknowledgements
 
 Termux project 
 
@@ -78,7 +85,9 @@ XFCE developers
 
 [https://github.com/LinuxDroidMaster](https://github.com/LinuxDroidMaster/Termux-Desktops) LinuxDroidMaster, main scripts based on his repo
 
-Future Plans
+---
+
+## Future Plans
 
 Planned to add support of other DE and PRoot version for users without rooted phone
 
