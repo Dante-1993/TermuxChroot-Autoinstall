@@ -108,7 +108,9 @@ configure_debian_chroot() {
     usermod -G 3003 -a root; \
     apt update; \
     apt upgrade; \
-    apt install nano vim net-tools sudo git; \
+    apt install nano vim net-tools sudo git locales; \
+    echo 'uk_UA.UTF-8 UTF-8' > /etc/locale.gen ; \
+    locale-gen; \
     echo "Debian chroot environment configured"'
 
     if [ $? -eq 0 ]; then
