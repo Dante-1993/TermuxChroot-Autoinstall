@@ -145,11 +145,11 @@ configure_debian_chroot() {
    # ==== AUTO_START_SERVICES ====
    if [ \"\$(id -u)\" -eq 0 ]; then
      if ! pgrep cron >/dev/null 2>&1; then
-         /etc/init.d/cron start >/dev/null 2>&1
+        sudo /etc/init.d/cron start >/dev/null 2>&1
      fi
   
      if ! pgrep sshd >/dev/null 2>&1; then
-         /etc/init.d/ssh start >/dev/null 2>&1
+        sudo /etc/init.d/ssh start >/dev/null 2>&1
      fi
    fi
    # ==== END AUTO_START_SERVICES ====
