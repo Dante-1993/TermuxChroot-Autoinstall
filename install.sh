@@ -136,8 +136,28 @@ configure_debian_chroot() {
 
     success "User account set up and sudo permissions configured"
     
-    progress "Configuring sudo permissions..."
-    bus
+    progress "Configuring services autostart..."
+   busybox chroot $DEBIANPATH /bin/su - root -c "
+   BASHRC=/home/$USERNAME/.bashrc
+   
+   grep -q 'AUTO_START_SERVICES' \$BASHRC 2>/dev/null || cat << 'EOL' >> \$BASHRC
+   
+   # ==== AUTO_START_SERVICES ====
+   if [ \"\$(id -u)\" -eq 0 ]; then
+     if ! pgrep cron >/dev/null 2>&1; then
+         /etc/init.d/cron start >/dev/null 2>&1
+     fi
+  
+     if ! pgrep sshd >/dev/null 2>&1; then
+         /etc/init.d/ssh start >/dev/null 2>&1
+     fi
+   fi
+   # ==== END AUTO_START_SERVICES ====
+   
+   EOL
+   
+   chown $USERNAME:$USERNAME \$BASHRC
+  "
     
     # Prompt for desktop environment
     progress "Select a desktop environment to install:"
