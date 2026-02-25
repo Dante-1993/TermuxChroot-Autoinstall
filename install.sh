@@ -140,7 +140,7 @@ configure_debian_chroot() {
    busybox chroot $DEBIANPATH /bin/su - root -c "
    BASHRC=/home/$USERNAME/.bashrc
    
-   grep -q 'AUTO_START_SERVICES' \$BASHRC 2>/dev/null || cat << 'EOL' >> \$BASHRC
+   grep -q 'AUTO_START_SERVICES' \$BASHRC 2>/dev/null || cat << 'EOF' >> \$BASHRC
    
    # ==== AUTO_START_SERVICES ====
    if [ \"\$(id -u)\" -eq 0 ]; then
@@ -154,7 +154,7 @@ configure_debian_chroot() {
    fi
    # ==== END AUTO_START_SERVICES ====
    
-   EOL
+   EOF
    
    chown $USERNAME:$USERNAME \$BASHRC
   "
