@@ -7,3 +7,4 @@ pkg install tsu
 pkg install pulseaudio
 chmod +x ./install.sh
 su -c ./install.sh
+su -c chown $USER:$USER startxfce4_chrootDebian.sh
