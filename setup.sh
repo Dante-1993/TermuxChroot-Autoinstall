@@ -9,3 +9,6 @@ chmod +x ./install.sh
 su -c ./install.sh
 su -c chown $USER:$USER startxfce4_chrootDebian.sh
 chmod +x startxfce4_chrootDebian.sh 
+cp -v startxfce4_chrootDebian.sh ~/.shortcuts/chroot.sh
+chmod +x stop.sh
+cp -v stop.sh ~/.shortcuts/stop.sh
