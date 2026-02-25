@@ -1,6 +1,6 @@
 TermuxChroot-Autoinstall
 
-Automated script to deploy a Debian chroot desktop environment on rooted Android using Termux, with XFCE, audio, clipboard integration, and optional namespace isolation.
+Automated script to deploy a Debian chroot desktop environment on rooted Android using Termux, with XFCE, audio, clipboard integration, .
 
 This project aims to provide a lightweight Linux workstation experience with standard services and networking.
 
@@ -12,6 +12,8 @@ XFCE desktop environment
 
 OpenSSH server
 
+Crond
+
 PulseAudio integration
 
 Clipboard support
@@ -22,8 +24,6 @@ Storage auto mount
 
 Termux:X11 integration
 
-Optional unshare isolation
-
 One-command desktop launch
 
 Termux shortcut integration
@@ -33,6 +33,8 @@ Termux shortcut integration
 Rooted Android device
 
 Termux installed (from F-Droid recommended)
+
+Busybox Magisk module
 
 Termux:X11 installed
 
@@ -59,8 +61,9 @@ cd TermuxChroot-Autoinstall
 
 Run installer:
 
-chmod +x install-debian-desktop.sh
-./install-debian-desktop.sh
+chmod +x setup.sh
+
+./setup.sh
 
 The installation will:
 
@@ -68,21 +71,19 @@ Bootstrap Debian rootfs
 
 Install XFCE and required packages
 
-Create user dante
+Create user for your choose
 
 Configure audio and DBus
 
 Create launch script
 
-Add Termux shortcut
 
 🖥️ Running the desktop
 
 Start Termux:X11 app first, then run:
 
-~/start-debian-desktop.sh
+~/startxfce4_chrootDebian.sh
 
-or use the Termux widget shortcut.
 
 This will:
 
@@ -95,6 +96,7 @@ Mount filesystems
 Start DBus session
 
 Launch XFCE desktop
+
 
 🔐 SSH access
 
@@ -111,19 +113,13 @@ Host	Chroot
 /dev	/dev
 /proc	/proc
 /sys	/sys
-🧩 Optional unshare isolation
-
-Edit launch script:
-
-USE_UNSHARE=1
-
-If kernel supports namespaces, this will create a lightweight container-like environment.
 
 🔊 Audio
 
 PulseAudio is bridged via TCP:
 
 PULSE_SERVER=tcp:127.0.0.1
+
 📋 Clipboard
 
 Clipboard works via:
@@ -138,7 +134,7 @@ xclip
 
 If virgl is installed:
 
-virgl_test_server_android &
+Umcomment virgl_test_server_android & in start script
 
 Otherwise software rendering will be used.
 
@@ -154,7 +150,6 @@ Mount points
 
 Services
 
-Isolation mode
 
 🧨 Troubleshooting
 Black screen
@@ -167,11 +162,8 @@ Restart PulseAudio:
 
 pulseaudio --kill
 pulseaudio --start
-Namespace errors
 
-Set:
 
-USE_UNSHARE=0
 🧠 Architecture overview
 Android kernel
    ↓
@@ -180,6 +172,7 @@ Termux
 Debian chroot
    ↓
 XFCE
+
 📊 What this project is NOT
 
 Not a VM
@@ -198,13 +191,17 @@ GPLv3 License
 
 ⭐ Acknowledgements
 
-Termux project
+Termux project 
 
-Debian
+Debian 
 
 XFCE developers
 
-⚠️ Disclaimer
+[https://github.com/LinuxDroidMaster](https://github.com/LinuxDroidMaster/Termux-Desktops) LinuxDroidMaster, main scripts based on his repo
+
+Future Plans
+
+Planned to add support of other DE, uninstall script and PRoot version for users without rooted phone
 
 Use at your own risk.
 Running Linux environments with root privileges may affect device stability.
