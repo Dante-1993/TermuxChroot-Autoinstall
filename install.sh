@@ -111,7 +111,6 @@ configure_debian_chroot() {
     apt install nano vim net-tools sudo git locales openssh-server xdg-utils bash-completion; \
     echo 'uk_UA.UTF-8 UTF-8' > /etc/locale.gen ; \
     locale-gen; \
-    dpkg-reconfigure locales; \
     echo "Debian chroot environment configured"'
 
     if [ $? -eq 0 ]; then
@@ -136,28 +135,31 @@ configure_debian_chroot() {
 
     success "User account set up and sudo permissions configured"
     
+    progress "Configure locales"
+    busybox chroot $DEBIANPATH /bin/su - root -c "dpkg-reconfigure locales"
+    
     progress "Configuring services autostart..."
-   busybox chroot $DEBIANPATH /bin/su - root -c "
-   BASHRC=/home/$USERNAME/.bashrc
+    busybox chroot $DEBIANPATH /bin/su - root -c "
+    BASHRC=/home/$USERNAME/.bashrc
    
-   grep -q 'AUTO_START_SERVICES' \$BASHRC 2>/dev/null || cat << 'EOF' >> \$BASHRC
+    grep -q 'AUTO_START_SERVICES' \$BASHRC 2>/dev/null || cat << 'EOF' >> \$BASHRC
    
-   # ==== AUTO_START_SERVICES ====
-   if [ \"\$(id -u)\" -eq 1000 ]; then
-     if ! pgrep cron >/dev/null 2>&1; then
-        sudo service cron start >/dev/null 2>&1
-     fi
-  
-     if ! pgrep sshd >/dev/null 2>&1; then
-        sudo service ssh start >/dev/null 2>&1
-     fi
-   fi
-   # ==== END AUTO_START_SERVICES ====
+    # ==== AUTO_START_SERVICES ====
+    if [ \"\$(id -u)\" -eq 1000 ]; then
+      if ! pgrep cron >/dev/null 2>&1; then
+         sudo service cron start >/dev/null 2>&1
+      fi
    
-   EOF
+      if ! pgrep sshd >/dev/null 2>&1; then
+         sudo service ssh start >/dev/null 2>&1
+      fi
+    fi
+    # ==== END AUTO_START_SERVICES ====
+    
+    EOF
    
-   chown $USERNAME:$USERNAME \$BASHRC
-  "
+    chown $USERNAME:$USERNAME \$BASHRC
+   "
     
     # Prompt for desktop environment
     progress "Select a desktop environment to install:"
