@@ -143,13 +143,13 @@ configure_debian_chroot() {
    grep -q 'AUTO_START_SERVICES' \$BASHRC 2>/dev/null || cat << 'EOF' >> \$BASHRC
    
    # ==== AUTO_START_SERVICES ====
-   if [ \"\$(id -u)\" -eq 0 ]; then
+   if [ \"\$(id -u)\" -eq 1000 ]; then
      if ! pgrep cron >/dev/null 2>&1; then
-        sudo /etc/init.d/cron start >/dev/null 2>&1
+        sudo service cron start >/dev/null 2>&1
      fi
   
      if ! pgrep sshd >/dev/null 2>&1; then
-        sudo /etc/init.d/ssh start >/dev/null 2>&1
+        sudo service ssh start >/dev/null 2>&1
      fi
    fi
    # ==== END AUTO_START_SERVICES ====
