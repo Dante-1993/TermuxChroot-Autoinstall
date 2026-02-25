@@ -57,7 +57,7 @@ download_and_execute_script() {
         echo -e "\e[1;33m[!] Script already exists: /data/local/tmp/start_debian.sh\e[0m"
         echo -e "\e[1;33m[!] Skipping download...\e[0m"
     else
-        wget -O "/data/local/tmp/start_debian.sh" "https://raw.githubusercontent.com/LinuxDroidMaster/Termux-Desktops/main/scripts/chroot/debian/start_debian.sh"
+        wget -O "/data/local/tmp/start_debian.sh" ""
         if [ $? -eq 0 ]; then
             success "Script downloaded successfully: /data/local/tmp/start_debian.sh"
             progress "Setting script permissions..."
