@@ -36,13 +36,13 @@ download_file() {
 # Function to extract file
 extract_file() {
     progress "Extracting file..."
-    if [ -d "$1/debian12-arm64" ]; then
+    if [ -d "$1/debian13-arm64" ]; then
         echo -e "\e[1;33m[!] Directory already exists: $1/debian12-arm64\e[0m"
         echo -e "\e[1;33m[!] Skipping extraction...\e[0m"
     else
-        tar xpvf "$1/debian12-arm64.tar.gz" -C "$1" --numeric-owner >/dev/null 2>&1
+        tar xpvf "$1/debian13-arm64.tar.gz" -C "$1" --numeric-owner >/dev/null 2>&1
         if [ $? -eq 0 ]; then
-            success "File extracted successfully: $1/debian12-arm64"
+            success "File extracted successfully: $1/debian13-arm64"
         else
             echo -e "\e[1;31m[!] Error extracting file. Exiting...\e[0m"
             goodbye
@@ -108,9 +108,10 @@ configure_debian_chroot() {
     usermod -G 3003 -a root; \
     apt update; \
     apt upgrade; \
-    apt install nano vim net-tools sudo git locales; \
+    apt install nano vim net-tools sudo git locales openssh-server xdg-utils bash-completion; \
     echo 'uk_UA.UTF-8 UTF-8' > /etc/locale.gen ; \
     locale-gen; \
+    dpkg-reconfigure locales; \
     echo "Debian chroot environment configured"'
 
     if [ $? -eq 0 ]; then
@@ -130,11 +131,14 @@ configure_debian_chroot() {
 
     # Add user to sudoers
     progress "Configuring sudo permissions..."
-    busybox chroot $DEBIANPATH /bin/su - root -c "echo '$USERNAME ALL=(ALL:ALL) ALL' >> /etc/sudoers"
+    busybox chroot $DEBIANPATH /bin/su - root -c "echo '$USERNAME ALL=(ALL:ALL) NOPASSWD: ALL' >> /etc/sudoers"
     busybox chroot $DEBIANPATH /bin/su - root -c "usermod -aG aid_inet $USERNAME"
 
     success "User account set up and sudo permissions configured"
-
+    
+    progress "Configuring sudo permissions..."
+    bus
+    
     # Prompt for desktop environment
     progress "Select a desktop environment to install:"
     echo "1. XFCE4"
@@ -220,7 +224,7 @@ main() {
             mkdir -p "$download_dir"
             success "Created directory: $download_dir"
         fi
-        download_file "$download_dir" "debian12-arm64.tar.gz" "https://github.com/Dante-1993/TermuxChroot-Autoinstall/releases/download/RootFS/debian-arm64.tar.gz"
+        download_file "$download_dir" "debian13-arm64.tar.gz" "https://github.com/Dante-1993/TermuxChroot-Autoinstall/releases/download/RootFS/debian-arm64.tar.gz"
         extract_file "$download_dir"
         download_and_execute_script "$download_dir"
         configure_debian_chroot
@@ -231,10 +235,14 @@ main() {
 # Call the main function
 echo -e "\e[32m"
 cat << "EOF"
-___  ____ ____ _ ___  _  _ ____ ____ ___ ____ ____    ____ _  _ ____ ____ ____ ___ 
-|  \ |__/ |  | | |  \ |\/| |__| [__   |  |___ |__/    |    |__| |__/ |  | |  |  |  
-|__/ |  \ |__| | |__/ |  | |  | ___]  |  |___ |  \    |___ |  | |  \ |__| |__|  |  
-                                                                                   
+██████╗  █████╗ ███╗   ██╗████████╗███████╗
+██╔══██╗██╔══██╗████╗  ██║╚══██╔══╝██╔════╝
+██║  ██║███████║██╔██╗ ██║   ██║   █████╗  
+██║  ██║██╔══██║██║╚██╗██║   ██║   ██╔══╝  
+██████╔╝██║  ██║██║ ╚████║   ██║   ███████╗
+╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝
+
+Termux Chroot Environment
 EOF
 echo -e "\e[0m"
 
