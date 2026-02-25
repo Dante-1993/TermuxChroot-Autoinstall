@@ -36,13 +36,13 @@ download_file() {
 # Function to extract file
 extract_file() {
     progress "Extracting file..."
-    if [ -d "$1/debian13-arm64" ]; then
-        echo -e "\e[1;33m[!] Directory already exists: $1/debian13-arm64\e[0m"
+    if [ -d "$1/debian12-arm64" ]; then
+        echo -e "\e[1;33m[!] Directory already exists: $1/debian12-arm64\e[0m"
         echo -e "\e[1;33m[!] Skipping extraction...\e[0m"
     else
-        tar xpvf "$1/debian13-arm64.tar.gz" -C "$1" --numeric-owner >/dev/null 2>&1
+        tar xpvf "$1/debian12-arm64.tar.gz" -C "$1" --numeric-owner >/dev/null 2>&1
         if [ $? -eq 0 ]; then
-            success "File extracted successfully: $1/debian13-arm64"
+            success "File extracted successfully: $1/debian12-arm64"
         else
             echo -e "\e[1;31m[!] Error extracting file. Exiting...\e[0m"
             goodbye
@@ -92,10 +92,10 @@ configure_debian_chroot() {
     busybox mount --bind /proc $DEBIANPATH/proc
     busybox mount -t devpts devpts $DEBIANPATH/dev/pts
 
-    mkdir $DEBIANPATH/dev/shm
+    mkdir -p  $DEBIANPATH/dev/shm
     busybox mount -t tmpfs -o size=256M tmpfs $DEBIANPATH/dev/shm
 
-    mkdir $DEBIANPATH/sdcard
+    mkdir -p  $DEBIANPATH/sdcard
     busybox mount --bind /sdcard $DEBIANPATH/sdcard
     
     busybox chroot /data/local/tmp/chrootDebian /bin/su - root -c 'apt update -y && apt upgrade -y'
@@ -218,7 +218,7 @@ main() {
             mkdir -p "$download_dir"
             success "Created directory: $download_dir"
         fi
-        download_file "$download_dir" "debian13-arm64.tar.gz" "https://github.com/Dante-1993/TermuxChroot-Autoinstall/releases/download/RootFS/debian-arm64.tar.gz"
+        download_file "$download_dir" "debian12-arm64.tar.gz" "https://github.com/Dante-1993/TermuxChroot-Autoinstall/releases/download/RootFS/debian-arm64.tar.gz"
         extract_file "$download_dir"
         download_and_execute_script "$download_dir"
         configure_debian_chroot
